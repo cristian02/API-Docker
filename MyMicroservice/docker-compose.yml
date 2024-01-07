@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  app_db:
+    image: mcr.microsoft.com/mssql/server
+    container_name: app_db
+    environment:
+      SA_PASSWORD: Cristian01.
+      ACCEPT_EULA: Y
+      MSSQL_PID: Express
+    ports:
+      - "1433:1433"
+    restart: always
+    networks:
+      - my-network
+    volumes:
+      - sql-server-data:/var/opt/mssql # Mount a volume for SQL Server data
+    healthcheck:
+      test: ["CMD", "sqlcmd", "-U", "sa", "-P", "Cristian01.", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  my-microservice:
+    image: docker.io/library/microservice1:latest
+    container_name: microservice1-example
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - "app_db"
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=app_db,1433;Database=docker;User Id=sa;Password=Cristian01.;MultipleActiveResultSets=true;Encrypt=False"
+      ASPNETCORE_URLS: http://+:80
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    driver: bridge
+
+volumes:
+  sql-server-data: # Define a named volume for SQL Server data
